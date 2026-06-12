@@ -78,10 +78,26 @@
   .config-box h3 { font-size: 15px; font-weight: 500; color: var(--amber); margin-bottom: 8px; }
   .config-box p { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  #login-screen { position: fixed; inset: 0; background: var(--bg3); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .login-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 340px; text-align: center; }
+  .login-box h2 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .login-box p { font-size: 13px; color: var(--text2); margin-bottom: 1.5rem; }
+  .login-box input { width: 100%; margin-bottom: 10px; text-align: center; font-size: 16px; letter-spacing: 0.05em; }
+  .login-error { font-size: 13px; color: var(--red); margin-top: 8px; min-height: 18px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
+<div id="login-screen">
+  <div class="login-box">
+    <div style="font-size:32px;margin-bottom:8px;">⚽</div>
+    <h2>Mundial 2026 — Typer</h2>
+    <p>Wpisz hasło aby wejść</p>
+    <input type="password" class="text-input" id="pw-input" placeholder="Hasło..." onkeydown="if(event.key==='Enter')checkPw()"/>
+    <button class="btn btn-green" onclick="checkPw()" style="width:100%;">Wejdź</button>
+    <div class="login-error" id="pw-error"></div>
+  </div>
+</div>
 <div class="container">
   <div class="header">
     <h1>Mundial 2026 — Typer</h1>
@@ -514,9 +530,30 @@ function removePlayer(name) {
   renderPlayers(); populateSel('active-player'); populateSel('bonus-player'); renderMatches();
 }
 
-populateSel('active-player');
-populateSel('bonus-player');
-refreshAll();
+const PW = 'madejek128!';
+function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  if (val === PW) {
+    sessionStorage.setItem('mw26_auth','1');
+    document.getElementById('login-screen').style.display='none';
+    bootApp();
+  } else {
+    document.getElementById('pw-error').textContent = 'Złe hasło, spróbuj ponownie.';
+    document.getElementById('pw-input').value='';
+  }
+}
+
+function bootApp() {
+  populateSel('active-player');
+  populateSel('bonus-player');
+  refreshAll();
+}
+
+if (sessionStorage.getItem('mw26_auth')==='1') {
+  document.getElementById('login-screen').style.display='none';
+  bootApp();
+}
+
 </script>
 </body>
 </html>
