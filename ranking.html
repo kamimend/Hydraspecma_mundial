@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mundial 2026 — Ranking</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f4; --bg3: #eeede9;
+    --text: #1a1a1a; --text2: #6b6b68; --text3: #9b9b98;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --green: #3b6d11; --green-bg: #eaf3de;
+    --amber: #854f0b; --amber-bg: #faeeda;
+    --blue: #185fa5; --blue-bg: #e6f1fb;
+    --red: #a32d2d; --red-bg: #fcebeb;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #e8e8e4; --text2: #a0a09c; --text3: #6e6e6a;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --green: #97c459; --green-bg: #173404;
+      --amber: #ef9f27; --amber-bg: #412402;
+      --blue: #85b7eb; --blue-bg: #042c53;
+      --red: #f09595; --red-bg: #501313;
+    }
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .container { max-width: 760px; margin: 0 auto; padding: 1rem; }
+  .header { padding: 1.5rem 0 1rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  .header h1 { font-size: 20px; font-weight: 500; }
+  .header p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .refresh-btn { padding: 6px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: transparent; cursor: pointer; font-size: 13px; color: var(--text2); font-family: inherit; white-space: nowrap; }
+  .refresh-btn:hover { background: var(--bg2); }
+  .section-title { font-size: 11px; font-weight: 500; color: var(--text3); margin: 1.5rem 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; }
+  .rank-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .rank-table th { text-align: left; padding: 8px 10px; font-weight: 500; font-size: 12px; color: var(--text2); border-bottom: 0.5px solid var(--border); }
+  .rank-table td { padding: 10px 10px; border-bottom: 0.5px solid var(--border); }
+  .rank-table tr:last-child td { border-bottom: none; }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-red   { background: var(--red-bg);   color: var(--red);   }
+  .badge-blue  { background: var(--blue-bg);  color: var(--blue);  }
+  .match-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; }
+  .match-card-header { padding: 12px 16px; border-bottom: 0.5px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: var(--bg2); }
+  .match-card-header .teams { font-size: 15px; font-weight: 500; }
+  .match-card-header .result { font-size: 18px; font-weight: 600; letter-spacing: 0.05em; }
+  .match-card-header .meta { font-size: 12px; color: var(--text2); }
+  .tips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1px; background: var(--border); }
+  .tip-cell { background: var(--bg); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tip-player { font-size: 13px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tip-score { font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .tip-cell.pts-3 { background: var(--green-bg); }
+  .tip-cell.pts-1 { background: var(--amber-bg); }
+  .tip-cell.pts-0 { background: var(--bg); }
+  .tip-cell.pts-none { background: var(--bg2); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading { text-align: center; padding: 3rem; color: var(--text2); font-size: 14px; }
+  .no-results { text-align: center; padding: 2rem; color: var(--text3); font-size: 13px; }
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .config-box { background: var(--amber-bg); border: 0.5px solid var(--amber); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .config-box h3 { font-size: 15px; font-weight: 500; color: var(--amber); margin-bottom: 8px; }
+  .config-box p { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
+  .text-input { font-size: 14px; padding: 6px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-family: inherit; width: 100%; margin-bottom: 8px; }
+  .btn-green { border-color: var(--green); color: var(--green); padding: 6px 14px; border-radius: var(--radius); background: transparent; cursor: pointer; font-size: 13px; font-family: inherit; border-width: 0.5px; border-style: solid; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .tab { padding: 7px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: transparent; cursor: pointer; font-size: 13px; color: var(--text2); font-family: inherit; }
+  .tab.active { background: var(--bg2); color: var(--text); font-weight: 500; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .pts-big { font-size: 20px; font-weight: 600; }
+  .player-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 8px; }
+  .player-match-cell { background: var(--bg2); border-radius: var(--radius); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+  .player-match-cell.pts-3 { background: var(--green-bg); }
+  .player-match-cell.pts-1 { background: var(--amber-bg); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>Mundial 2026 — Ranking</h1>
+      <p>3 pkt dokładny wynik · 1 pkt kierunek/remis · 5 pkt mistrz · 5 pkt król strzelców</p>
+    </div>
+    <button class="refresh-btn" onclick="refreshAll()"><i class="ti ti-refresh"></i> Odśwież</button>
+  </div>
+
+  <div id="config-box" class="config-box" style="display:none;">
+    <h3><i class="ti ti-settings"></i> Konfiguracja</h3>
+    <p>Wklej URL Google Apps Script (ten sam co w głównej apce):</p>
+    <input type="text" class="text-input" id="script-url-input" placeholder="https://script.google.com/macros/s/TWÓJ_ID/exec"/>
+    <button class="btn-green" onclick="saveScriptUrl()"><i class="ti ti-check"></i> Zapisz i połącz</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('ranking',this)"><i class="ti ti-list-numbers"></i> Ranking</button>
+    <button class="tab" onclick="showTab('matches',this)"><i class="ti ti-ball-football"></i> Mecze i typy</button>
+    <button class="tab" onclick="showTab('players',this)"><i class="ti ti-user"></i> Gracze</button>
+  </div>
+
+  <div id="tab-ranking" class="section active">
+    <div id="ranking-content"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+  </div>
+
+  <div id="tab-matches" class="section">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green-bg);border:1px solid var(--green)"></div> Dokładny wynik (3 pkt)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border:1px solid var(--amber)"></div> Trafiony kierunek (1 pkt)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--bg);border:1px solid var(--border2)"></div> Pudło (0 pkt)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--bg2);border:1px solid var(--border2)"></div> Brak typu</div>
+    </div>
+    <div id="matches-content"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+  </div>
+
+  <div id="tab-players" class="section">
+    <div id="players-content"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+  </div>
+</div>
+
+<script>
+const MATCHES = [
+  {id:'m1',  date:'2026-06-11', time:'21:00', home:'Meksyk',       away:'RPA',               group:'A'},
+  {id:'m2',  date:'2026-06-12', time:'04:00', home:'Korea Płd.',   away:'Czechy',            group:'A'},
+  {id:'m3',  date:'2026-06-12', time:'21:00', home:'Kanada',       away:'Bośnia i Herg.',    group:'B'},
+  {id:'m4',  date:'2026-06-13', time:'03:00', home:'USA',          away:'Paragwaj',          group:'D'},
+  {id:'m5',  date:'2026-06-13', time:'21:00', home:'Katar',        away:'Szwajcaria',        group:'B'},
+  {id:'m6',  date:'2026-06-14', time:'00:00', home:'Brazylia',     away:'Maroko',            group:'C'},
+  {id:'m7',  date:'2026-06-14', time:'03:00', home:'Haiti',        away:'Szkocja',           group:'C'},
+  {id:'m8',  date:'2026-06-14', time:'06:00', home:'Australia',    away:'Turcja',            group:'D'},
+  {id:'m9',  date:'2026-06-14', time:'19:00', home:'Niemcy',       away:'Curacao',           group:'E'},
+  {id:'m10', date:'2026-06-14', time:'22:00', home:'Holandia',     away:'Japonia',           group:'F'},
+  {id:'m11', date:'2026-06-15', time:'01:00', home:'WKS',          away:'Ekwador',           group:'E'},
+  {id:'m12', date:'2026-06-15', time:'04:00', home:'Szwecja',      away:'Tunezja',           group:'F'},
+  {id:'m13', date:'2026-06-15', time:'18:00', home:'Hiszpania',    away:'Rep. Ziel. Przyl.', group:'H'},
+  {id:'m14', date:'2026-06-15', time:'21:00', home:'Belgia',       away:'Egipt',             group:'G'},
+  {id:'m15', date:'2026-06-16', time:'00:00', home:'Arabia Saud.', away:'Urugwaj',           group:'H'},
+  {id:'m16', date:'2026-06-16', time:'03:00', home:'Iran',         away:'Nowa Zelandia',     group:'G'},
+  {id:'m17', date:'2026-06-16', time:'21:00', home:'Francja',      away:'Senegal',           group:'I'},
+  {id:'m18', date:'2026-06-17', time:'00:00', home:'Irak',         away:'Norwegia',          group:'I'},
+  {id:'m19', date:'2026-06-17', time:'03:00', home:'Argentyna',    away:'Algieria',          group:'J'},
+  {id:'m20', date:'2026-06-17', time:'06:00', home:'Austria',      away:'Jordania',          group:'J'},
+  {id:'m21', date:'2026-06-17', time:'19:00', home:'Portugalia',   away:'DR Konga',          group:'K'},
+  {id:'m22', date:'2026-06-17', time:'22:00', home:'Anglia',       away:'Chorwacja',         group:'L'},
+  {id:'m23', date:'2026-06-18', time:'01:00', home:'Kolumbia',     away:'Uzbekistan',        group:'K'},
+  {id:'m24', date:'2026-06-18', time:'04:00', home:'Panama',       away:'Ghana',             group:'L'},
+  {id:'m25', date:'2026-06-18', time:'18:00', home:'Czechy',       away:'RPA',               group:'A'},
+  {id:'m26', date:'2026-06-18', time:'21:00', home:'Szwajcaria',   away:'Bośnia i Herg.',    group:'B'},
+  {id:'m27', date:'2026-06-19', time:'00:00', home:'Niemcy',       away:'WKS',               group:'E'},
+  {id:'m28', date:'2026-06-19', time:'03:00', home:'Meksyk',       away:'Korea Płd.',        group:'A'},
+  {id:'m29', date:'2026-06-19', time:'18:00', home:'Brazylia',     away:'Haiti',             group:'C'},
+  {id:'m30', date:'2026-06-19', time:'21:00', home:'Australia',    away:'Paragwaj',          group:'D'},
+];
+
+const DEFAULT_PLAYERS = ['Radek','kamimend','monk_aw','KMCK','Tomek-K','jakucaba','Przemo','Okocha','Adriano88','Marcin','JacaMiszcz','FranzVII','Wodzu','SPAWALNIK','MKF196m'];
+
+const PRESET_TIPS = {
+  'Adriano88_m1':{h:5,a:1}, 'FranzVII_m1':{h:2,a:0},   'JacaMiszcz_m1':{h:2,a:0},
+  'jakucaba_m1':{h:2,a:0},  'kamimend_m1':{h:3,a:1},    'KMCK_m1':{h:2,a:1},
+  'MKF196m_m1':{h:3,a:1},   'monk_aw_m1':{h:1,a:0},     'Okocha_m1':{h:3,a:0},
+  'Przemo_m1':{h:2,a:0},    'Radek_m1':{h:2,a:0},       'SPAWALNIK_m1':{h:2,a:1},
+  'Tomek-K_m1':{h:3,a:1},   'Wodzu_m1':{h:2,a:0},       'Marcin_m1':{h:2,a:0},
+
+  'Radek_m2':{h:2,a:1},     'Adriano88_m2':{h:2,a:2},   'FranzVII_m2':{h:1,a:2},
+  'JacaMiszcz_m2':{h:1,a:2},'jakucaba_m2':{h:1,a:1},    'kamimend_m2':{h:1,a:1},
+  'KMCK_m2':{h:0,a:2},      'Marcin_m2':{h:0,a:1},      'MKF196m_m2':{h:3,a:3},
+  'monk_aw_m2':{h:1,a:1},   'Okocha_m2':{h:1,a:1},      'Przemo_m2':{h:1,a:2},
+  'SPAWALNIK_m2':{h:0,a:2}, 'Tomek-K_m2':{h:1,a:1},     'Wodzu_m2':{h:1,a:1},
+};
+
+const PRESET_RESULTS = {
+  'm1': {h:2, a:0},
+  'm2': {h:2, a:1},
+};
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfGc7_eJJ8Fjimysoa3y9ZfOqIn-ZzrFWW1uj4IM2HCGkpJril3ZonO5ciSQqszbcJIg/exec';
+
+let players   = DEFAULT_PLAYERS;
+let tips      = {...PRESET_TIPS};
+let results   = {...PRESET_RESULTS};
+let bonusTips = {};
+let bonusRes  = {};
+
+function calcPts(th,ta,rh,ra) {
+  if(th===undefined||ta===undefined||rh===undefined||ra===undefined) return null;
+  if(th===rh&&ta===ra) return 3;
+  const td=th>ta?'h':th<ta?'a':'d', rd=rh>ra?'h':rh<ra?'a':'d';
+  return td===rd?1:0;
+}
+
+function formatDate(d) {
+  const days=['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+  const months=['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
+  const dt=new Date(d+'T12:00:00');
+  return `${days[dt.getDay()]}, ${dt.getDate()} ${months[dt.getMonth()]}`;
+}
+
+function isPlayed(m) { return new Date() >= new Date(m.date+'T'+m.time+':00'); }
+
+async function api(params) {
+  const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) return null;
+    return data;
+  } catch(e) { return null; }
+}
+
+function saveScriptUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url) return;
+  localStorage.setItem('mw26_url', url);
+  document.getElementById('config-box').style.display = 'none';
+  refreshAll();
+}
+
+async function refreshAll() {
+  const [t, r, b, br] = await Promise.all([
+    api({action:'getTips'}), api({action:'getResults'}),
+    api({action:'getBonus'}), api({action:'getBonusRes'}),
+  ]);
+
+  tips    = {...PRESET_TIPS};
+  results = {...PRESET_RESULTS};
+
+  if (t)  t.tips.forEach(row    => { tips[row.player+'_'+row.matchId] = {h:Number(row.home), a:Number(row.away)}; });
+  if (r)  r.results.forEach(row => { results[row.matchId] = {h:Number(row.home), a:Number(row.away)}; });
+  if (b)  { bonusTips={}; b.bonus.forEach(row => { if(!bonusTips[row.player])bonusTips[row.player]={}; bonusTips[row.player][row.type]=row.value; }); }
+  if (br) { bonusRes={}; br.bonusRes.forEach(row => { bonusRes[row.type]=row.value; }); }
+
+  renderRanking();
+  renderMatches();
+  renderPlayers();
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// ── Ranking ───────────────────────────────────────────────────────────────────
+function renderRanking() {
+  const cont = document.getElementById('ranking-content');
+  const scores = players.map(pl => {
+    let total=0, exact=0, dir=0, miss=0, bonus=0;
+    MATCHES.forEach(m => {
+      const t=tips[pl+'_'+m.id]||{}, r=results[m.id];
+      const pts=calcPts(t.h,t.a,r?.h,r?.a);
+      if(pts===3){total+=3;exact++;} else if(pts===1){total+=1;dir++;} else if(pts===0) miss++;
+    });
+    const bt=bonusTips[pl]||{};
+    if(bonusRes.champion&&bt.champion&&bt.champion.trim().toLowerCase()===bonusRes.champion.trim().toLowerCase()){bonus+=5;total+=5;}
+    if(bonusRes.topscorer&&bt.topscorer&&bt.topscorer.trim().toLowerCase()===bonusRes.topscorer.trim().toLowerCase()){bonus+=5;total+=5;}
+    return{pl,total,exact,dir,miss,bonus};
+  });
+  scores.sort((a,b)=>b.total-a.total||b.exact-a.exact||b.bonus-a.bonus);
+
+  const medals = ['🥇','🥈','🥉'];
+  let html = `<div class="card"><table class="rank-table">
+    <thead><tr>
+      <th>#</th><th>Gracz</th>
+      <th style="text-align:right">Pkt</th>
+      <th style="text-align:right">✅ Dok.</th>
+      <th style="text-align:right">🟡 Kier.</th>
+      <th style="text-align:right">❌ Pudło</th>
+      <th style="text-align:right">⭐ Bon.</th>
+    </tr></thead><tbody>`;
+
+  scores.forEach((s,i) => {
+    const medal = i < 3 ? medals[i] : (i+1);
+    html += `<tr>
+      <td style="font-size:${i<3?'16px':'13px'}">${medal}</td>
+      <td style="font-weight:${i===0?'500':'400'}">${s.pl}</td>
+      <td style="text-align:right;font-weight:600;font-size:16px">${s.total}</td>
+      <td style="text-align:right;color:var(--green)">${s.exact}</td>
+      <td style="text-align:right;color:var(--amber)">${s.dir}</td>
+      <td style="text-align:right;color:var(--text3)">${s.miss}</td>
+      <td style="text-align:right;color:var(--blue)">${s.bonus}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  // Bonus section
+  if (bonusRes.champion || bonusRes.topscorer) {
+    html += `<div class="section-title">Bonusy</div><div class="card">`;
+    if (bonusRes.champion) {
+      html += `<div style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;"><i class="ti ti-trophy"></i> Mistrz świata — oficjalnie: <span style="color:var(--green)">${bonusRes.champion}</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+      players.forEach(pl => {
+        const bt=bonusTips[pl]||{};
+        const hit = bt.champion && bt.champion.trim().toLowerCase()===bonusRes.champion.trim().toLowerCase();
+        html += `<span class="badge ${hit?'badge-green':'badge-red'}">${pl}: ${bt.champion||'—'} ${hit?'✓':''}</span>`;
+      });
+      html += `</div></div>`;
+    }
+    if (bonusRes.topscorer) {
+      html += `<div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;"><i class="ti ti-shoe"></i> Król strzelców — oficjalnie: <span style="color:var(--green)">${bonusRes.topscorer}</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+      players.forEach(pl => {
+        const bt=bonusTips[pl]||{};
+        const hit = bt.topscorer && bt.topscorer.trim().toLowerCase()===bonusRes.topscorer.trim().toLowerCase();
+        html += `<span class="badge ${hit?'badge-green':'badge-red'}">${pl}: ${bt.topscorer||'—'} ${hit?'✓':''}</span>`;
+      });
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  cont.innerHTML = html;
+}
+
+// ── Matches ───────────────────────────────────────────────────────────────────
+function renderMatches() {
+  const cont = document.getElementById('matches-content');
+  const played = MATCHES.filter(m => isPlayed(m) && results[m.id]);
+  if (!played.length) {
+    cont.innerHTML = `<div class="no-results"><i class="ti ti-clock"></i><br>Brak rozegranych meczów z wynikami.</div>`;
+    return;
+  }
+  let html = '';
+  played.forEach(m => {
+    const r = results[m.id];
+    html += `<div class="match-card">
+      <div class="match-card-header">
+        <div>
+          <div class="teams">${m.home} vs ${m.away}</div>
+          <div class="meta">${formatDate(m.date)} · ${m.time} · Gr. ${m.group}</div>
+        </div>
+        <div class="result">${r.h} : ${r.a}</div>
+      </div>
+      <div class="tips-grid">`;
+    players.forEach(pl => {
+      const t = tips[pl+'_'+m.id];
+      const pts = t ? calcPts(t.h, t.a, r.h, r.a) : null;
+      const cls = pts===3?'pts-3':pts===1?'pts-1':pts===0?'pts-0':'pts-none';
+      html += `<div class="tip-cell ${cls}">
+        <span class="tip-player">${pl}</span>
+        <span class="tip-score">${t ? t.h+':'+t.a : '—'}${pts!==null?' <span class="badge '+( pts===3?'badge-green':pts===1?'badge-amber':'badge-red')+'">'+pts+'</span>':''}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  cont.innerHTML = html;
+}
+
+// ── Players ───────────────────────────────────────────────────────────────────
+function renderPlayers() {
+  const cont = document.getElementById('players-content');
+  const played = MATCHES.filter(m => isPlayed(m) && results[m.id]);
+  let html = '';
+  players.forEach(pl => {
+    let total=0, exact=0, dir=0, bonus=0;
+    MATCHES.forEach(m => {
+      const t=tips[pl+'_'+m.id]||{}, r=results[m.id];
+      const pts=calcPts(t.h,t.a,r?.h,r?.a);
+      if(pts===3){total+=3;exact++;} else if(pts===1){total+=1;dir++;}
+    });
+    const bt=bonusTips[pl]||{};
+    if(bonusRes.champion&&bt.champion&&bt.champion.trim().toLowerCase()===bonusRes.champion.trim().toLowerCase()){bonus+=5;total+=5;}
+    if(bonusRes.topscorer&&bt.topscorer&&bt.topscorer.trim().toLowerCase()===bonusRes.topscorer.trim().toLowerCase()){bonus+=5;total+=5;}
+
+    html += `<div class="match-card" style="margin-bottom:12px;">
+      <div class="match-card-header">
+        <div class="teams">${pl}</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge badge-green">${exact} dok.</span>
+          <span class="badge badge-amber">${dir} kier.</span>
+          ${bonus>0?`<span class="badge badge-blue">${bonus} bon.</span>`:''}
+          <span style="font-size:18px;font-weight:600">${total} pkt</span>
+        </div>
+      </div>
+      <div class="player-detail-grid" style="padding:10px 12px;">`;
+    played.forEach(m => {
+      const t=tips[pl+'_'+m.id], r=results[m.id];
+      const pts=t?calcPts(t.h,t.a,r.h,r.a):null;
+      const cls=pts===3?'pts-3':pts===1?'pts-1':'';
+      html += `<div class="player-match-cell ${cls}">
+        <span style="font-size:12px;color:var(--text2)">${m.home} vs ${m.away}</span>
+        <span style="font-size:13px;font-weight:500">${t?t.h+':'+t.a:'—'}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  cont.innerHTML = html || `<div class="no-results">Brak danych.</div>`;
+}
+
+refreshAll();
+</script>
+</body>
+</html>
