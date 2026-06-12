@@ -71,15 +71,12 @@
   .del-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 15px; line-height: 1; padding: 0 1px; }
   .del-btn:hover { color: var(--red); }
   .add-row { display: flex; gap: 8px; align-items: center; margin-top: 1rem; }
-  .bonus-section { margin-bottom: 12px; }
   .bonus-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
   .bonus-sub { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
-  .loading { text-align: center; padding: 2rem; color: var(--text2); font-size: 14px; }
   .error-bar { background: var(--red-bg); color: var(--red); padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 1rem; display: none; }
   .config-box { background: var(--amber-bg); border: 0.5px solid var(--amber); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
   .config-box h3 { font-size: 15px; font-weight: 500; color: var(--amber); margin-bottom: 8px; }
   .config-box p { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
-  .config-box input { width: 100%; margin-bottom: 8px; }
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -88,12 +85,12 @@
 <div class="container">
   <div class="header">
     <h1>Mundial 2026 — Typer</h1>
-    <p>3 pkt dokładny wynik &middot; 1 pkt kierunek/remis &middot; 5 pkt mistrz &middot; 5 pkt król strzelców</p>
+    <p>3 pkt dokładny wynik · 1 pkt kierunek/remis · 5 pkt mistrz · 5 pkt król strzelców</p>
   </div>
 
   <div id="config-box" class="config-box" style="display:none;">
     <h3><i class="ti ti-settings"></i> Konfiguracja</h3>
-    <p>Wklej URL swojego Google Apps Script Web App (z kroku 2 instrukcji):</p>
+    <p>Wklej URL swojego Google Apps Script Web App:</p>
     <input type="text" class="text-input" id="script-url-input" placeholder="https://script.google.com/macros/s/TWÓJ_ID/exec" style="width:100%;margin-bottom:8px;"/>
     <button class="btn btn-green" onclick="saveScriptUrl()"><i class="ti ti-check"></i> Zapisz i połącz</button>
   </div>
@@ -114,7 +111,7 @@
       <label>Gracz:</label>
       <select id="active-player" onchange="renderMatches()"></select>
     </div>
-    <div id="matches-list"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+    <div id="matches-list"><div class="loading" style="text-align:center;padding:2rem;color:var(--text2);font-size:14px;"><span class="spinner"></span>Ładowanie...</div></div>
   </div>
 
   <div id="tab-bonus" class="section">
@@ -226,15 +223,34 @@ const MATCHES = [
 
 const DEFAULT_PLAYERS = ['Radek','kamimend','monk_aw','KMCK','Tomek-K','jakucaba','Przemo','Okocha','Adriano88','Marcin','JacaMiszcz','FranzVII','Wodzu','SPAWALNIK','MKF196m'];
 
-// ── State ────────────────────────────────────────────────────────────────────
+// Wbudowane typy z LeagueMates (mecze m1 i m2)
+const PRESET_TIPS = {
+  'Adriano88_m1':{h:5,a:1}, 'FranzVII_m1':{h:2,a:0},   'JacaMiszcz_m1':{h:2,a:0},
+  'jakucaba_m1':{h:2,a:0},  'kamimend_m1':{h:3,a:1},    'KMCK_m1':{h:2,a:1},
+  'MKF196m_m1':{h:3,a:1},   'monk_aw_m1':{h:1,a:0},     'Okocha_m1':{h:3,a:0},
+  'Przemo_m1':{h:2,a:0},    'Radek_m1':{h:2,a:0},       'SPAWALNIK_m1':{h:2,a:1},
+  'Tomek-K_m1':{h:3,a:1},   'Wodzu_m1':{h:2,a:0},  'Marcin_m1':{h:2,a:0},
+
+  'Radek_m2':{h:2,a:1},     'Adriano88_m2':{h:2,a:2},   'FranzVII_m2':{h:1,a:2},
+  'JacaMiszcz_m2':{h:1,a:2},'jakucaba_m2':{h:1,a:1},    'kamimend_m2':{h:1,a:1},
+  'KMCK_m2':{h:0,a:2},      'Marcin_m2':{h:0,a:1},      'MKF196m_m2':{h:3,a:3},
+  'monk_aw_m2':{h:1,a:1},   'Okocha_m2':{h:1,a:1},      'Przemo_m2':{h:1,a:2},
+  'SPAWALNIK_m2':{h:0,a:2}, 'Tomek-K_m2':{h:1,a:1},     'Wodzu_m2':{h:1,a:1},
+};
+
+// Wbudowane wyniki meczów m1 i m2
+const PRESET_RESULTS = {
+  'm1': {h:2, a:0},  // Meksyk 2:0 RPA
+  'm2': {h:2, a:1},  // Korea Płd. 2:1 Czechy
+};
+
 let SCRIPT_URL = localStorage.getItem('mw26_url') || '';
 let players    = JSON.parse(localStorage.getItem('mw26_players') || 'null') || DEFAULT_PLAYERS;
-let tips       = {};   // { player_matchId: {h,a} }
-let results    = {};   // { matchId: {h,a} }
-let bonusTips  = {};   // { player: {champion, topscorer} }
-let bonusRes   = {};   // { champion, topscorer }
+let tips       = {...PRESET_TIPS};
+let results    = {...PRESET_RESULTS};
+let bonusTips  = {};
+let bonusRes   = {};
 
-// ── API ───────────────────────────────────────────────────────────────────────
 async function api(params) {
   if (!SCRIPT_URL) { showError('Brak URL Apps Script — przejdź do zakładki Ustawienia.'); return null; }
   const url = SCRIPT_URL + '?' + new URLSearchParams(params).toString();
@@ -243,47 +259,40 @@ async function api(params) {
     const data = await res.json();
     if (data.error) { showError('Błąd API: ' + data.error); return null; }
     return data;
-  } catch(e) {
-    showError('Błąd połączenia: ' + e.message);
-    return null;
-  }
+  } catch(e) { showError('Błąd połączenia: ' + e.message); return null; }
 }
 
 function showError(msg) {
   const el = document.getElementById('error-bar');
-  el.textContent = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 5000);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 async function refreshAll() {
   if (!SCRIPT_URL) { document.getElementById('config-box').style.display = 'block'; return; }
   document.getElementById('config-box').style.display = 'none';
 
   const [t, r, b, br] = await Promise.all([
-    api({action:'getTips'}),
-    api({action:'getResults'}),
-    api({action:'getBonus'}),
-    api({action:'getBonusRes'}),
+    api({action:'getTips'}), api({action:'getResults'}),
+    api({action:'getBonus'}), api({action:'getBonusRes'}),
   ]);
 
-  if (t) { tips = {}; t.tips.forEach(row => { tips[row.player+'_'+row.matchId] = {h:Number(row.home), a:Number(row.away)}; }); }
-  if (r) { results = {}; r.results.forEach(row => { results[row.matchId] = {h:Number(row.home), a:Number(row.away)}; }); }
-  if (b) { bonusTips = {}; b.bonus.forEach(row => { if(!bonusTips[row.player])bonusTips[row.player]={}; bonusTips[row.player][row.type]=row.value; }); }
-  if (br){ bonusRes = {}; br.bonusRes.forEach(row => { bonusRes[row.type]=row.value; }); }
+  // Start with presets, then overlay from DB
+  tips    = {...PRESET_TIPS};
+  results = {...PRESET_RESULTS};
 
-  renderMatches();
-  renderBonus();
-  renderResultsList();
+  if (t)  t.tips.forEach(row    => { tips[row.player+'_'+row.matchId] = {h:Number(row.home), a:Number(row.away)}; });
+  if (r)  r.results.forEach(row => { results[row.matchId] = {h:Number(row.home), a:Number(row.away)}; });
+  if (b)  { bonusTips={}; b.bonus.forEach(row => { if(!bonusTips[row.player])bonusTips[row.player]={}; bonusTips[row.player][row.type]=row.value; }); }
+  if (br) { bonusRes={}; br.bonusRes.forEach(row => { bonusRes[row.type]=row.value; }); }
+
+  renderMatches(); renderBonus(); renderResultsList();
 }
 
-// ── URL config ────────────────────────────────────────────────────────────────
 function saveScriptUrl() {
   const url = document.getElementById('script-url-input').value.trim();
   if (!url) return;
-  SCRIPT_URL = url;
-  localStorage.setItem('mw26_url', url);
+  SCRIPT_URL = url; localStorage.setItem('mw26_url', url);
   document.getElementById('current-url-display').textContent = url;
   refreshAll();
 }
@@ -291,111 +300,101 @@ function saveScriptUrl() {
 function changeUrl() {
   const newUrl = prompt('Wklej nowy URL Apps Script:', SCRIPT_URL);
   if (newUrl) {
-    SCRIPT_URL = newUrl.trim();
-    localStorage.setItem('mw26_url', SCRIPT_URL);
+    SCRIPT_URL = newUrl.trim(); localStorage.setItem('mw26_url', SCRIPT_URL);
     document.getElementById('current-url-display').textContent = SCRIPT_URL;
     refreshAll();
   }
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if (btn) btn.classList.add('active');
-  if (name === 'ranking') renderRanking();
-  if (name === 'players') renderPlayers();
-  if (name === 'results') { renderResultsList(); }
-  if (name === 'matches') renderMatches();
-  if (name === 'bonus')   renderBonus();
-  if (name === 'settings') { document.getElementById('current-url-display').textContent = SCRIPT_URL || '—'; }
+  if (name==='ranking') renderRanking();
+  if (name==='players') renderPlayers();
+  if (name==='results') renderResultsList();
+  if (name==='matches') renderMatches();
+  if (name==='bonus')   renderBonus();
+  if (name==='settings') document.getElementById('current-url-display').textContent = SCRIPT_URL||'—';
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function isLocked(m) { return new Date() >= new Date(m.date+'T'+m.time+':00'); }
 
-function calcPts(th, ta, rh, ra) {
-  if (th===undefined||ta===undefined||rh===undefined||ra===undefined) return null;
-  if (th===rh && ta===ra) return 3;
+function calcPts(th,ta,rh,ra) {
+  if(th===undefined||ta===undefined||rh===undefined||ra===undefined) return null;
+  if(th===rh&&ta===ra) return 3;
   const td=th>ta?'h':th<ta?'a':'d', rd=rh>ra?'h':rh<ra?'a':'d';
-  return td===rd ? 1 : 0;
+  return td===rd?1:0;
 }
 
 function formatDate(d) {
   const days=['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
   const months=['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
-  const dt = new Date(d+'T12:00:00');
+  const dt=new Date(d+'T12:00:00');
   return `${days[dt.getDay()]}, ${dt.getDate()} ${months[dt.getMonth()]}`;
 }
 
 function populateSel(id) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = players.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
-  if (!players.includes(cur) && players.length) sel.value = players[0];
+  const sel=document.getElementById(id); if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML=players.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+  if(!players.includes(cur)&&players.length) sel.value=players[0];
 }
 
-// ── Matches ───────────────────────────────────────────────────────────────────
 function renderMatches() {
   populateSel('active-player');
-  const pl = document.getElementById('active-player')?.value || players[0];
-  const list = document.getElementById('matches-list');
-  if (!list) return;
-  let html = '', lastDate = '';
+  const pl=document.getElementById('active-player')?.value||players[0];
+  const list=document.getElementById('matches-list'); if(!list)return;
+  let html='',lastDate='';
   MATCHES.forEach(m => {
-    if (m.date !== lastDate) { html += `<div class="day-header">${formatDate(m.date)}</div>`; lastDate = m.date; }
-    const locked = isLocked(m);
-    const t = tips[pl+'_'+m.id] || {};
-    const r = results[m.id];
-    const pts = r ? calcPts(t.h, t.a, r.h, r.a) : null;
-    const saved = t.h !== undefined && t.a !== undefined;
-    html += `<div class="card ${locked?'locked':''}">
+    if(m.date!==lastDate){html+=`<div class="day-header">${formatDate(m.date)}</div>`;lastDate=m.date;}
+    const locked=isLocked(m);
+    const t=tips[pl+'_'+m.id]||{};
+    const r=results[m.id];
+    const pts=r?calcPts(t.h,t.a,r.h,r.a):null;
+    const saved=t.h!==undefined&&t.a!==undefined;
+    html+=`<div class="card ${locked?'locked':''}">
       <div class="match-header">
         <span class="match-teams">${m.home} vs ${m.away}</span>
         <div class="match-meta-row">
           <span class="match-meta">${m.time} · Gr. ${m.group}</span>
-          ${locked ? `<span class="badge badge-red"><i class="ti ti-lock"></i> Zablokowany</span>` : `<span class="badge badge-green"><i class="ti ti-lock-open"></i> Otwarty</span>`}
+          ${locked?`<span class="badge badge-red"><i class="ti ti-lock"></i> Zablokowany</span>`:`<span class="badge badge-green"><i class="ti ti-lock-open"></i> Otwarty</span>`}
         </div>
       </div>
       <div class="input-row">
         <input type="number" min="0" max="20" class="score-input" id="h_${m.id}" value="${saved?t.h:''}" placeholder="0" ${locked?'disabled':''}/>
         <span class="score-sep">:</span>
         <input type="number" min="0" max="20" class="score-input" id="a_${m.id}" value="${saved?t.a:''}" placeholder="0" ${locked?'disabled':''}/>
-        ${!locked ? `<button class="btn btn-green" onclick="saveTip('${m.id}')"><i class="ti ti-device-floppy"></i> Zapisz</button>` : ''}
-        ${saved ? `<span class="saved-ok"><i class="ti ti-check"></i> ${t.h}:${t.a}</span>` : ''}
-        ${pts!==null ? `<span class="badge ${pts===3?'badge-green':pts===1?'badge-amber':'badge-red'}">${pts} pkt</span>` : ''}
+        ${!locked?`<button class="btn btn-green" onclick="saveTip('${m.id}')"><i class="ti ti-device-floppy"></i> Zapisz</button>`:''}
+        ${saved?`<span class="saved-ok"><i class="ti ti-check"></i> ${t.h}:${t.a}</span>`:''}
+        ${pts!==null?`<span class="badge ${pts===3?'badge-green':pts===1?'badge-amber':'badge-red'}">${pts} pkt</span>`:''}
       </div>
     </div>`;
   });
-  list.innerHTML = html;
+  list.innerHTML=html;
 }
 
 async function saveTip(mid) {
-  const m = MATCHES.find(x => x.id === mid);
-  if (isLocked(m)) { alert('Mecz już się zaczął — typ zablokowany!'); return; }
-  const pl = document.getElementById('active-player')?.value || players[0];
-  const h = document.getElementById('h_'+mid)?.value;
-  const a = document.getElementById('a_'+mid)?.value;
-  if (h===''||a==='') { alert('Wpisz obie wartości!'); return; }
-  tips[pl+'_'+mid] = {h:parseInt(h), a:parseInt(a)};
+  const m=MATCHES.find(x=>x.id===mid);
+  if(isLocked(m)){alert('Mecz już się zaczął — typ zablokowany!');return;}
+  const pl=document.getElementById('active-player')?.value||players[0];
+  const h=document.getElementById('h_'+mid)?.value, a=document.getElementById('a_'+mid)?.value;
+  if(h===''||a===''){alert('Wpisz obie wartości!');return;}
+  tips[pl+'_'+mid]={h:parseInt(h),a:parseInt(a)};
   renderMatches();
-  await api({action:'saveTip', player:pl, matchId:mid, home:h, away:a});
+  await api({action:'saveTip',player:pl,matchId:mid,home:h,away:a});
 }
 
-// ── Bonus ─────────────────────────────────────────────────────────────────────
 function renderBonus() {
   populateSel('bonus-player');
-  const pl = document.getElementById('bonus-player')?.value || players[0];
-  const bt = bonusTips[pl] || {};
-  const bc = document.getElementById('bonus-content');
-  if (!bc) return;
-  const champLocked = bonusRes.champion !== undefined;
-  const tsLocked    = bonusRes.topscorer !== undefined;
-  const champPts = champLocked&&bt.champion ? (bt.champion.trim().toLowerCase()===bonusRes.champion.trim().toLowerCase()?5:0) : null;
-  const tsPts    = tsLocked&&bt.topscorer  ? (bt.topscorer.trim().toLowerCase()===bonusRes.topscorer.trim().toLowerCase()?5:0) : null;
-  bc.innerHTML = `
+  const pl=document.getElementById('bonus-player')?.value||players[0];
+  const bt=bonusTips[pl]||{};
+  const bc=document.getElementById('bonus-content'); if(!bc)return;
+  const champLocked=bonusRes.champion!==undefined, tsLocked=bonusRes.topscorer!==undefined;
+  const champPts=champLocked&&bt.champion?(bt.champion.trim().toLowerCase()===bonusRes.champion.trim().toLowerCase()?5:0):null;
+  const tsPts=tsLocked&&bt.topscorer?(bt.topscorer.trim().toLowerCase()===bonusRes.topscorer.trim().toLowerCase()?5:0):null;
+  bc.innerHTML=`
     <div class="card">
       <div class="bonus-title"><i class="ti ti-trophy"></i> Mistrz świata — 5 pkt</div>
       <div class="bonus-sub">Reprezentacja, która wygra cały turniej.</div>
@@ -421,25 +420,21 @@ function renderBonus() {
 }
 
 async function saveBonus(type) {
-  const pl  = document.getElementById('bonus-player')?.value || players[0];
-  const val = document.getElementById('tip-'+type)?.value?.trim();
-  if (!val) { alert('Wpisz nazwę!'); return; }
-  if (!bonusTips[pl]) bonusTips[pl] = {};
-  bonusTips[pl][type] = val;
-  renderBonus();
-  await api({action:'saveBonus', player:pl, type, value:val});
+  const pl=document.getElementById('bonus-player')?.value||players[0];
+  const val=document.getElementById('tip-'+type)?.value?.trim();
+  if(!val){alert('Wpisz nazwę!');return;}
+  if(!bonusTips[pl])bonusTips[pl]={};
+  bonusTips[pl][type]=val; renderBonus();
+  await api({action:'saveBonus',player:pl,type,value:val});
 }
 
-// ── Results ───────────────────────────────────────────────────────────────────
 function renderResultsList() {
-  const list = document.getElementById('results-list');
-  if (!list) return;
-  let html = '', lastDate = '';
-  MATCHES.forEach(m => {
-    if (m.date !== lastDate) { html += `<div class="day-header">${formatDate(m.date)}</div>`; lastDate = m.date; }
-    const r = results[m.id] || {};
-    const saved = r.h !== undefined;
-    html += `<div class="card">
+  const list=document.getElementById('results-list'); if(!list)return;
+  let html='',lastDate='';
+  MATCHES.forEach(m=>{
+    if(m.date!==lastDate){html+=`<div class="day-header">${formatDate(m.date)}</div>`;lastDate=m.date;}
+    const r=results[m.id]||{}, saved=r.h!==undefined;
+    html+=`<div class="card">
       <div class="match-header">
         <span class="match-teams">${m.home} vs ${m.away}</span>
         <span class="match-meta">${m.time} · Gr. ${m.group}</span>
@@ -453,7 +448,7 @@ function renderResultsList() {
       </div>
     </div>`;
   });
-  list.innerHTML = html;
+  list.innerHTML=html;
   const rc=bonusRes.champion||'', rts=bonusRes.topscorer||'';
   const rcEl=document.getElementById('result-champion'), rtsEl=document.getElementById('result-topscorer');
   if(rcEl)rcEl.value=rc; if(rtsEl)rtsEl.value=rts;
@@ -464,26 +459,22 @@ function renderResultsList() {
 async function saveResult(mid) {
   const h=document.getElementById('rh_'+mid)?.value, a=document.getElementById('ra_'+mid)?.value;
   if(h===''||a===''){alert('Wpisz obie wartości!');return;}
-  results[mid]={h:parseInt(h),a:parseInt(a)};
-  renderResultsList();
-  await api({action:'saveResult', matchId:mid, home:h, away:a});
+  results[mid]={h:parseInt(h),a:parseInt(a)}; renderResultsList();
+  await api({action:'saveResult',matchId:mid,home:h,away:a});
 }
 
 async function saveBonusResult(type) {
   const val=document.getElementById('result-'+type)?.value?.trim();
   if(!val){alert('Wpisz wartość!');return;}
-  bonusRes[type]=val;
-  renderResultsList();
-  await api({action:'saveBonusRes', type, value:val});
+  bonusRes[type]=val; renderResultsList();
+  await api({action:'saveBonusRes',type,value:val});
 }
 
-// ── Ranking ───────────────────────────────────────────────────────────────────
 function renderRanking() {
-  const tbody = document.getElementById('ranking-body');
-  if (!tbody) return;
-  const scores = players.map(pl => {
-    let total=0, exact=0, dir=0, bonus=0;
-    MATCHES.forEach(m => {
+  const tbody=document.getElementById('ranking-body'); if(!tbody)return;
+  const scores=players.map(pl=>{
+    let total=0,exact=0,dir=0,bonus=0;
+    MATCHES.forEach(m=>{
       const t=tips[pl+'_'+m.id]||{}, r=results[m.id];
       const pts=calcPts(t.h,t.a,r?.h,r?.a);
       if(pts===3){total+=3;exact++;} else if(pts===1){total+=1;dir++;}
@@ -491,10 +482,10 @@ function renderRanking() {
     const bt=bonusTips[pl]||{};
     if(bonusRes.champion&&bt.champion&&bt.champion.trim().toLowerCase()===bonusRes.champion.trim().toLowerCase()){bonus+=5;total+=5;}
     if(bonusRes.topscorer&&bt.topscorer&&bt.topscorer.trim().toLowerCase()===bonusRes.topscorer.trim().toLowerCase()){bonus+=5;total+=5;}
-    return {pl,total,exact,dir,bonus};
+    return{pl,total,exact,dir,bonus};
   });
   scores.sort((a,b)=>b.total-a.total||b.exact-a.exact||b.bonus-a.bonus);
-  tbody.innerHTML = scores.map((s,i)=>`<tr>
+  tbody.innerHTML=scores.map((s,i)=>`<tr>
     <td>${i===0?'<i class="ti ti-crown" style="color:var(--amber)"></i>':i+1}</td>
     <td style="font-weight:${i===0?'500':'400'}">${s.pl}</td>
     <td style="text-align:right;font-weight:500">${s.total}</td>
@@ -504,31 +495,25 @@ function renderRanking() {
   </tr>`).join('');
 }
 
-// ── Players ───────────────────────────────────────────────────────────────────
 function renderPlayers() {
-  const cont = document.getElementById('player-chips');
-  if (!cont) return;
-  cont.innerHTML = players.map(p=>`<div class="player-chip">${p}<button class="del-btn" onclick="removePlayer('${p}')">×</button></div>`).join('');
+  const cont=document.getElementById('player-chips'); if(!cont)return;
+  cont.innerHTML=players.map(p=>`<div class="player-chip">${p}<button class="del-btn" onclick="removePlayer('${p}')">×</button></div>`).join('');
 }
 
 function addPlayer() {
   const inp=document.getElementById('new-player-input');
-  const name=inp?.value?.trim();
-  if(!name)return;
+  const name=inp?.value?.trim(); if(!name)return;
   if(players.includes(name)){alert('Gracz już istnieje!');return;}
-  players.push(name);
-  localStorage.setItem('mw26_players', JSON.stringify(players));
+  players.push(name); localStorage.setItem('mw26_players',JSON.stringify(players));
   inp.value=''; renderPlayers(); populateSel('active-player'); populateSel('bonus-player');
 }
 
 function removePlayer(name) {
   if(!confirm(`Usunąć gracza "${name}"?`))return;
-  players=players.filter(p=>p!==name);
-  localStorage.setItem('mw26_players', JSON.stringify(players));
+  players=players.filter(p=>p!==name); localStorage.setItem('mw26_players',JSON.stringify(players));
   renderPlayers(); populateSel('active-player'); populateSel('bonus-player'); renderMatches();
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
 populateSel('active-player');
 populateSel('bonus-player');
 refreshAll();
