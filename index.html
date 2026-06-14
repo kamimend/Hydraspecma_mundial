@@ -335,7 +335,7 @@ function showTab(name, btn) {
   if (name==='settings') document.getElementById('current-url-display').textContent = SCRIPT_URL||'—';
 }
 
-function isLocked(m) { return new Date() >= new Date(m.date+'T'+m.time+':00'); }
+function isLocked(m) { return false; } // blokada wyłączona — wszystkie mecze zawsze edytowalne
 
 function calcPts(th,ta,rh,ra) {
   if(th===undefined||ta===undefined||rh===undefined||ra===undefined) return null;
@@ -375,7 +375,6 @@ function renderMatches() {
         <span class="match-teams">${m.home} vs ${m.away}</span>
         <div class="match-meta-row">
           <span class="match-meta">${m.time} · Gr. ${m.group}</span>
-          ${locked?`<span class="badge badge-red"><i class="ti ti-lock"></i> Zablokowany</span>`:`<span class="badge badge-green"><i class="ti ti-lock-open"></i> Otwarty</span>`}
         </div>
       </div>
       <div class="input-row">
